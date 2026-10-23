@@ -25,6 +25,12 @@ docs/           Escopo, requisitos, arquitetura e roadmap
 infra/          Serviços locais de infraestrutura
 ```
 
+## Contexto para pessoas e agentes
+
+Antes de desenvolver, leia [AGENTS.md](AGENTS.md) e o
+[índice da documentação](docs/README.md). Esses arquivos registram a fonte de
+verdade atual e indicam como interpretar os materiais originais.
+
 ## Desenvolvimento local
 
 1. Duplique `.env.example` como `.env` e preencha as credenciais necessárias.
