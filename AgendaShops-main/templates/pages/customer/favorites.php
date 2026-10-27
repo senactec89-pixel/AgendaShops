@@ -1,0 +1,3 @@
+<?php use AgendaShops\Http\Forms as F; ?>
+<main class="page-shell"><h1>Meus favoritos</h1><?php if (!$page['businesses']): ?><section class="card"><p>Você ainda não salvou estabelecimentos.</p><a href="/explorar">Explorar serviços</a></section><?php endif; ?>
+<div class="service-grid"><?php foreach ($page['businesses'] as $b): ?><article class="card"><h2><a href="/estabelecimentos/<?= e($b['slug']) ?>"><?= e($b['name']) ?></a></h2><p><?= e($b['city']) ?></p><?= F::open('favorite',['business_id'=>$b['id']],'/favoritos') . F::close('Remover dos favoritos') ?></article><?php endforeach; ?></div></main>

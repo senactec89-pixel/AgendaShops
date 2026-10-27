@@ -1,0 +1,4 @@
+<?php use AgendaShops\Http\Forms as F; ?>
+<main class="page-shell narrow"><a href="/admin">← Administração</a><h1>Inspeção de conversa</h1><p>Referência: <?= e($page['conversation']['id']) ?>. Esta consulta fica registrada na auditoria.</p>
+<section class="card"><?php foreach ($page['messages'] as $message): ?><article class="message"><strong><?= $message['is_system'] ? 'AgendaShops' : e($message['sender_name'] ?? 'Conta excluída') ?></strong><p><?= nl2br(e($message['body'])) ?></p><small><?= e(localDate($message['created_at'])) ?></small></article><?php endforeach; ?>
+<?= F::open('moderate',['type'=>'conversation','id'=>$page['conversation']['id'],'value'=>$page['conversation']['blocked'] ? '0' : '1'],'/admin/conversas/' . $page['conversation']['id']) . F::close($page['conversation']['blocked'] ? 'Desbloquear conversa' : 'Bloquear conversa') ?></section></main>

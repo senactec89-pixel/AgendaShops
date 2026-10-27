@@ -1,0 +1,30 @@
+{
+  "name": "agendashops/agendashops",
+  "description": "Plataforma web de beleza e bem-estar",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo": "*",
+    "ext-mbstring": "*",
+    "ext-fileinfo": "*",
+    "ext-curl": "*",
+    "ext-iconv": "*",
+    "ext-openssl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "AgendaShops\\": "src/"
+    }
+  },
+  "scripts": {
+    "serve": "php -S localhost:8000 index.php",
+    "serve:public": "php -S localhost:8000 -t public public/index.php",
+    "install-app": "php bin/console.php install",
+    "test": ["@test:config", "@test:domain"],
+    "test:config": "php tests/configuration/run.php",
+    "test:domain": "php tests/domain/run.php",
+    "check": "@test",
+    "test:http": "python tests/http/checks.py"
+  }
+}
