@@ -1,182 +1,97 @@
-# AgendaShops — site PHP funcional
+# AgendaShops
 
-Site responsivo de serviços de beleza e bem-estar, com dados persistidos e áreas
-de cliente, parceiro, funcionário e administrador.
+Plataforma de agendamento em PHP 8.2+, PDO e MySQL, sem Composer, Node ou serviços pagos obrigatórios. O repositório contém a aplicação real; a ilustração da landing page é identificada como tal e não alimenta os painéis.
 
-O arquivo **`index.php` na raiz** abre o sistema por um servidor PHP. Na pasta do
-projeto, execute `php -S localhost:8000 index.php` e acesse
-`http://localhost:8000/index.php`. Com XAMPP, use o caminho do PHP mostrado abaixo.
-Arquivos PHP precisam do servidor; não são abertos pelo protocolo `file://`.
+## Arquitetura e etapas implementadas
 
-## Iniciar no Windows
+1. Banco relacional multiestabelecimento, autenticação por sessão, CSRF e permissões.
+2. Serviços de disponibilidade e reservas, com validação transacional e histórico.
+3. Gestão de serviços, profissionais, horários, intervalos, exceções e clientes.
+4. Página pública com consulta dinâmica, revisão, reserva e calendário pessoal.
+5. Dashboard, agenda com filtros de dia/semana/mês e administração da plataforma.
+6. Testes de regras e concorrência, documentação de instalação.
 
-Abra um PowerShell nesta pasta e execute:
+`public/index.php` recebe as rotas e aplica autenticação/CSRF. `app/Services/` contém as regras; `app/Views/` contém as telas. `config/bootstrap.php` carrega configuração, PDO e auxiliares. `database/database.sql` é o esquema inicial (não reaplicar sobre uma instalação existente). `tests/` contém verificações em banco descartável.
+
+## Instalação local no XAMPP
+
+1. Ative Apache e MySQL. PHP precisa de `pdo_mysql`, `mbstring`, `fileinfo` e `iconv`.
+2. Copie `.env.example` para `.env`. Para instalar automaticamente em um banco vazio, execute `C:\xampp\php\php.exe bin/install.php`. O instalador recusa alterar um banco que já tenha tabelas. Como alternativa manual, crie um banco vazio:
+   ```sql
+   CREATE DATABASE agendashops CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+3. Importe `database/database.sql` no phpMyAdmin com o banco selecionado. Pela linha de comando: `mysql -u root -p agendashops < database/database.sql` (em um shell que suporte redirecionamento de entrada).
+4. Copie `.env.example` para `.env` na raiz e ajuste as credenciais. Não publique nem versione esse arquivo.
+5. Defina `APP_URL=http://localhost/AgendaShops-main/public` sem barra final e mantenha `SESSION_SECURE=0` somente para HTTP local.
+6. Abra **http://localhost/AgendaShops-main/public/**. Use **Criar minha agenda**, adicione profissionais, adicione serviços vinculando os profissionais e configure o expediente.
+7. Configure logo, descrição, antecedência e política de confirmação em Configurações. Compartilhe o link público do dashboard.
+
+Alternativa ao Apache, com `.env` apontando `APP_URL=http://127.0.0.1:8080`:
 
 ```powershell
-.\start.ps1
+C:\xampp\php\php.exe -S 127.0.0.1:8080 -t public public/router.php
 ```
 
-O script usa PHP do PATH ou `C:\xampp\php\php.exe`, instala o banco local e informa
-o endereço privado para criar o primeiro administrador. Mantenha o terminal
-aberto e acesse **http://localhost:8000**. Não há senha administrativa padrão.
+Nenhuma conta ou senha padrão é criada. As contas de estabelecimentos são criadas pelo cadastro público. Profissionais recebem acesso individual quando o proprietário informa e-mail e senha no seu formulário. Cada profissional só consulta e gerencia a própria agenda.
 
-Alternativamente, execute na raiz:
+## Primeiro superadministrador
+
+Execute no terminal, nunca pelo navegador:
 
 ```powershell
-& C:\xampp\php\php.exe bin/console.php install
-& C:\xampp\php\php.exe -S localhost:8000 index.php
+C:\xampp\php\php.exe bin/create-superadmin.php
 ```
 
-Com PHP no PATH, substitua o caminho por `php`. Com Composer, também é possível
-usar `composer install-app`, `composer serve` e `composer test`.
+Informe nome, e-mail e uma senha exclusiva com no mínimo 12 caracteres no prompt oculto. Não coloque a senha em argumentos ou histórico do shell. Entre normalmente e acesse `/plataforma`. O superadmin consulta contas, totais, datas de cadastro e pode bloquear/desbloquear estabelecimentos. Não tem acesso de rotina aos clientes das empresas.
 
-## Primeira configuração pelo site
+## Publicação na Hostinger
 
-1. Abra o endereço `/instalar?token=...` exibido pelo instalador e crie sua conta
-   administrativa. O token é privado e deixa de funcionar após a criação.
-2. Em **Admin**, confira as categorias iniciais; crie, ordene ou desative conforme
-   necessário. Subcategorias também são suportadas.
-3. Crie uma conta de parceiro pelo cadastro normal. Em **Parceiro**, cadastre o
-   estabelecimento, endereço, política e fuso. Configure horários, profissionais,
-   serviços, preços e fotos. Habilite os profissionais em cada serviço.
-4. Na conta administrativa, aprove o estabelecimento em **Admin**. Só então ele
-   aparecerá em **Explorar**.
-5. Clientes podem buscar, comparar, favoritar e solicitar horários. O parceiro
-   aceita/recusa em **Agenda**; ambas as partes conversam em **Mensagens**.
+Use o pacote `dist/agendashops-hostinger.zip` e siga [HOSTINGER.md](HOSTINGER.md). Ele já separa `public_html` da pasta privada, configura os caminhos automaticamente e inclui um exemplo de configuração de produção, sem credenciais locais.
 
-Não há estabelecimentos fictícios no banco inicial. A busca fica vazia até um
-parceiro real cadastrar serviços e receber aprovação.
+A aplicação respeita `APP_TIMEZONE` (padrão America/Sao_Paulo). Esta versão usa **um fuso por instalação**. Configure também o fuso da sessão MySQL pelo mesmo horário: o bootstrap aplica o deslocamento atual do PHP por conexão.
 
-## Funcionalidades
+## Regras de agenda e segurança
 
-- Cadastro com consentimento versionado, login, logout, recuperação de senha,
-  atualização de perfil e exclusão com anonimização cadastral.
-- Login e vinculação Google quando as credenciais estiverem configuradas.
-- Estabelecimentos sujeitos a aprovação; serviços com imagens, duração, preços
-  em centavos, categorias configuráveis e profissionais habilitados.
-- Jornadas, dias de atendimento, intervalos/folgas por data e bloqueios.
-- Busca por nome, cidade/endereço, categoria, faixa de preço, avaliação e data.
-  Geolocalização opcional ordena por distância aproximada; busca manual permanece.
-- Favoritos e comparação de até três serviços da mesma categoria.
-- Solicitação pendente, aceite transacional sem sobreposição, recusa, cancelamento,
-  reagendamento, expiração configurável, atendimento e avaliação após conclusão.
-- Chat vinculado ao agendamento, eventos de sistema, leitura, contador de não lidas,
-  denúncias e bloqueio administrativo. Use **Atualizar mensagens** para novas mensagens.
-- Promoção percentual por serviço e período; notificações transacionais na conta.
-- Equipe vinculada por e-mail pelo proprietário; funcionário opera agenda, bloqueios
-  e mensagens. O proprietário mantém catálogo, jornadas, equipe e estabelecimento.
-- Administração de categorias, aprovação/suspensão, denúncias, avaliações, inspeção
-  e bloqueio de conversas, com auditoria.
+- Todas as referências de serviços, profissionais e clientes usam o estabelecimento autenticado; vínculos cruzados também são impedidos por chaves estrangeiras compostas.
+- O cliente público é identificado pelo slug ativo, nunca por um ID de empresa enviado como autorização.
+- Reservas e alterações de horários bloqueiam a linha do estabelecimento com `SELECT ... FOR UPDATE`. Após obter o bloqueio, a reserva recalcula a disponibilidade em READ COMMITTED e grava dentro da mesma transação. Isso serializa reservas da empresa, inclusive a opção de qualquer profissional. É uma escolha conservadora para hospedagem compartilhada; não é um benchmark de alto volume.
+- Duração e preço são registrados na reserva. `busy_until` inclui o intervalo adicional e não muda quando o serviço é editado posteriormente.
+- Expediente individual intersecta o da empresa. Exceções substituem o expediente semanal no respectivo âmbito; múltiplas exceções no mesmo dia se intersectam e um bloqueio integral sempre vence. Pausas continuam aplicadas nas exceções. Alterar expediente não cancela reservas antigas automaticamente.
+- Horários de início seguem a grade contada a partir da abertura efetiva. Cancelamentos liberam ou preservam o bloqueio conforme Configurações. Status terminais não podem ser reativados; crie nova reserva.
+- Senhas usam hash, sessão é regenerada após login/cadastro, alterações exigem CSRF, consultas usam prepared statements e saídas HTML são escapadas.
+- Imagens são limitadas a JPG/PNG/WebP de até 2 MB e 4096×4096, com MIME verificado, nomes aleatórios e execução bloqueada no Apache. Arquivos abandonados por uma transação que falhe podem ser removidos por manutenção.
+- Limites de requisições são persistidos em banco e aplicados por IP. Atrás de proxy, configure REMOTE_ADDR com o IP real apenas de proxies confiáveis. Em escala, adicione limites no proxy/WAF.
+- A consulta de confirmação é protegida por token aleatório de 256 bits. Quem tiver o link poderá consultar a reserva; não compartilhe publicamente.
+- Dados de um cliente já existente não são sobrescritos por um visitante que informa o mesmo telefone.
 
-Pendentes não reservam o horário. O prazo de resposta é configurado em minutos
-pelo parceiro; zero desativa a expiração automática. Horários de consulta têm passo
-de 15 minutos e horizonte de 180 dias. O aceite revalida disponibilidade, preço,
-duração e política e preserva os dados da confirmação.
+## WhatsApp e calendário
 
-## Banco e configuração
-
-Requisitos: PHP 8.1+ com PDO, `pdo_sqlite` (local) ou `pdo_pgsql` (produção),
-mbstring, fileinfo e cURL. Use uma versão PHP atualmente suportada em produção.
-Composer e Node.js não são necessários para o modo local.
-
-Ajustes deste computador ficam em `config/local.php`, com modelo em
-`config/local.example.php`. O arquivo local é ignorado no Git. O `.env` continua
-suportado: ambiente do processo > `.env` > `config/local.php` > `config/app.php`.
-Consulte o [guia local](docs/08-local-setup.md). Não publique credenciais.
-
-Sem `DB_DSN`, o banco local é `storage/agendashops.sqlite`. Dados, sessões, imagens
-e e-mails são privados em `storage/`, que deve ser gravável pelo processo PHP.
-Para PostgreSQL em produção:
-
-```dotenv
-APP_ENV=production
-APP_URL=https://seu-dominio.example
-DB_DSN=pgsql:host=localhost;port=5432;dbname=agendashops
-DB_USER=agendashops
-DB_PASSWORD=configure-no-servidor
-MAIL_TRANSPORT=smtp
-MAIL_FROM=noreply@seu-dominio.example
-```
-
-Crie o banco e usuário, habilite `pdo_pgsql` e execute `php bin/console.php install`.
-O schema usa SQL compartilhado entre os adaptadores. PostgreSQL/PostGIS continua
-como banco de produção planejado. Redis é opcional e não é usado nos fluxos atuais.
-O Compose de infraestrutura pode ser iniciado com:
-
-```sh
-docker compose --env-file .env -f infra/docker-compose.yml up -d
-```
-
-A saúde da aplicação está em `/api/v1/health`; a consulta de horários em
-`/api/v1/slots/ID_DO_SERVICO?date=AAAA-MM-DD`. Saúde não verifica banco ou provedores.
-Para processar expiração sem visitas ao site, agende `php bin/console.php expire`.
-
-## E-mail e Google
-
-Localmente, `MAIL_TRANSPORT=file` salva os e-mails de recuperação em
-`storage/mail/*.txt`. Abra o arquivo para usar o link de recuperação. Esses arquivos
-não são servidos pelo site. Em produção, configure SMTP com STARTTLS:
-
-```dotenv
-MAIL_TRANSPORT=smtp
-MAIL_FROM=noreply@seu-dominio.example
-SMTP_HOST=smtp.seu-provedor.example
-SMTP_PORT=587
-SMTP_USER=configure-no-servidor
-SMTP_PASSWORD=configure-no-servidor
-```
-
-Para Google, crie um cliente OAuth de aplicação web e defina `GOOGLE_CLIENT_ID` e
-`GOOGLE_CLIENT_SECRET`. Cadastre como callback exatamente
-`APP_URL/auth/google/callback` (ex.: `http://localhost:8000/auth/google/callback`).
-O botão só aparece quando configurado. Para vincular uma conta local existente,
-entre primeiro com sua senha e use o botão de vinculação no perfil. Para conta
-nova, aceite os termos pelo cadastro Google.
-
-Google e entrega SMTP real precisam das credenciais do operador e não foram
-validados com contas externas nesta entrega. Veja a
-[documentação oficial do Google](https://developers.google.com/identity/openid-connect/openid-connect).
+O botão WhatsApp abre uma mensagem com o modelo configurado; **o envio é manual**. Não existe API externa configurada nem promessa de envio automático. Os serviços de reserva estão separados da interface para permitir adicionar um adaptador de notificações futuro. O calendário baixa um arquivo `.ics` com horários UTC que pode ser importado no calendário do cliente.
 
 ## Testes
 
 ```powershell
-& C:\xampp\php\php.exe tests/configuration/run.php
-& C:\xampp\php\php.exe tests/domain/run.php
-python tests/http/checks.py
+C:\xampp\php\php.exe tests/run.php
 ```
 
-Os testes usam dados isolados e não criam contas no banco do site. A suíte de
-configuração valida a precedência dos ambientes. A de domínio cobre permissões,
-conflitos, concorrência real, transições, promoções, histórico, chat, expiração e
-avaliações. A de HTTP inicia um servidor temporário e verifica os fluxos completos,
-incluindo CSRF, recuperação de senha, upload e proteção dos arquivos privados.
+O teste cria um banco `agendashops_test_<aleatório>`, importa o esquema e remove somente esse banco ao terminar. Exige permissão CREATE/DROP DATABASE do usuário de teste; não use o usuário restrito de produção. Não altera dados do banco da aplicação. Inclui processos PHP concorrentes com conexões distintas para disputar o mesmo horário.
 
-Para usar outro PHP nos testes HTTP, defina `PHP_BINARY` no ambiente. Não aponte
-`TEST_DB_DSN` para banco real; o teste de domínio cria dados de teste.
+Cobertura: isolamento de empresas e vínculos, sobreposição com durações diferentes, almoço, fechamento, folgas/feriados, agendas independentes, passado/limite futuro, tempo adicional, expediente individual, reagendamento, cancelamento/política, bloqueio de empresa e disputa concorrente. `tests/http-smoke.py` verifica rotas e formulários com um banco temporário e servidor PHP local.
 
-## Hospedagem e estrutura
+## Limitações e trabalho antes da produção
 
-Exponha **somente `public/`** como raiz do site, com HTTPS. Apache precisa de
-`mod_rewrite` e permissão para o `.htaccess` incluído. O
-[servidor embutido do PHP](https://www.php.net/manual/en/features.commandline.webserver.php)
-é destinado ao desenvolvimento. Faça backup do banco e do armazenamento privado;
-revise os textos de termos/privacidade com os dados do operador antes do piloto.
+- Não há recuperação de senha por e-mail, verificação de e-mail, cobrança de assinatura, envio automático de notificações ou sincronização bidirecional de calendários.
+- A agenda oferece filtros de dia/semana/mês e cartões; não há arrastar e soltar ou edição por gesto.
+- Uma empresa pode ter vários profissionais, mas nesta versão cada conta de proprietário gerencia um estabelecimento. O logo é cadastrado após a criação da conta, em Configurações.
+- O catálogo e as listagens não têm paginação; recomenda-se acrescentá-la para grandes volumes.
+- O aviso de privacidade é uma base funcional. O operador deve preencher identificação/contato, retenção e procedimentos de atendimento LGPD. Exclusão/anomização e backups são operações administrativas, sem automação nesta versão.
+- Configure retenção/limpeza de rate_limits expirados (`DELETE FROM rate_limits WHERE expires_at < NOW()`) e imagens sem referência, monitore logs e faça backups criptografados fora do diretório público.
+- Verificado em PHP 8.2.12 e MariaDB 10.4 do XAMPP. O esquema usa recursos compatíveis com MySQL 8; execute a suíte no servidor MySQL final. Não houve publicação externa ou auditoria independente de segurança.
 
-```text
-index.php           Abertura local pela raiz e entrega dos assets permitidos
-public/index.php    Entrada compartilhada do site e da API; raiz de produção
-public/assets/     CSS e JavaScript em pastas próprias
-config/            bootstrap.php, app.php e configuração local.php
-src/               HTTP, módulos, contratos, infraestrutura e helpers
-templates/         layouts/, partials/ e pages/ separadas por área
-database/          Schema relacional
-bin/console.php    Instalação, administrador e expiração
-storage/           Dados privados preservados, ignorados no Git
-tests/             configuration/, domain/ e http/
-docs/              Requisitos, arquitetura, guias e decisões
-```
+## Verificação realizada nesta entrega
 
-Leia [AGENTS.md](AGENTS.md), o [índice](docs/README.md) e o
-[ADR-005](docs/decisions/ADR-005-functional-local-site.md).
-
-Mapa completo dos arquivos: [organização do projeto](docs/07-project-structure.md).
+- Sintaxe dos arquivos PHP validada com PHP 8.2.12.
+- 30 verificações de regras, banco e concorrência aprovadas em MariaDB 10.4.32.
+- 25 verificações HTTP aprovadas usando servidor PHP e banco descartável, incluindo cadastro, papéis, CSRF, reserva pública, confirmação e ICS.
+- Apache local respondeu 200 na página inicial, login e CSS; negou acesso direto a `.env` e SQL com 403.
+- Não foi executada automação de navegador visual; JavaScript e responsividade precisam de conferência visual nos navegadores de destino.

@@ -1,0 +1,1 @@
+<?php require __DIR__.'/head.php';?><main class="narrow panel"><span class="eyebrow">VAMOS AJUSTAR ISSO</span><h1>Não foi possível continuar.</h1><p role="alert"><?=e($message)?></p><button type="button" data-back>← Voltar e corrigir</button><a href="<?=e(url())?>">Ir ao início</a></main><?php require __DIR__.'/foot.php';?>

@@ -1,0 +1,1 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#153f36"><title><?=e($title??'AgendaShops · Tempo para o que importa')?></title><link rel="stylesheet" href="<?=e(url('assets/app.css'))?>"><script src="<?=e(url('assets/app.js'))?>" defer></script></head><body>
